@@ -1,0 +1,2577 @@
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EventSphere TBS — Event Management &amp; Ticket Booking System</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    @keyframes scanLaser {
+      0% { top: 8%; opacity: 0.9; }
+      50% { top: 88%; opacity: 1; }
+      100% { top: 8%; opacity: 0.9; }
+    }
+    .laser-line {
+      position: absolute;
+      left: 6%;
+      right: 6%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #10b981, #34d399, #10b981, transparent);
+      box-shadow: 0 0 12px 2px rgba(16, 185, 129, 0.75);
+      animation: scanLaser 2.2s ease-in-out infinite;
+    }
+    .ticket-notch-left, .ticket-notch-right {
+      position: absolute;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      background-color: #f8fafc;
+      border-radius: 9999px;
+      transform: translateY(-50%);
+    }
+    .ticket-notch-left { left: -12px; }
+    .ticket-notch-right { right: -12px; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <!-- Brand Logo -->
+      <button id="brandHomeBtn" type="button" class="flex items-center gap-2.5 text-left group focus:outline-none">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-lg tracking-tight text-slate-900">EventSphere</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700">TBS v2.4</span>
+          </div>
+          <p class="text-[11px] text-slate-500 hidden sm:block">Event Management &amp; Ticket Booking System</p>
+        </div>
+      </button>
+
+      <!-- Desktop Navigation Pills -->
+      <nav class="hidden md:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80" aria-label="Main Navigation">
+        <button type="button" data-nav="explore" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 bg-white text-indigo-600 shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <span>Explore Events</span>
+        </button>
+        <button type="button" data-nav="tickets" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
+          <span>My Bookings</span>
+          <span id="navTicketCountBadge" class="ml-0.5 px-1.5 py-0.2 text-xs rounded-full bg-indigo-600 text-white font-bold">0</span>
+        </button>
+        <button type="button" data-nav="scanner" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+          <span>QR Validator</span>
+        </button>
+        <button type="button" data-nav="dashboard" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <span>Organizer Dashboard</span>
+        </button>
+      </nav>
+
+      <!-- Quick Action & Mobile Menu Button -->
+      <div class="flex items-center gap-2">
+        <button id="headerCreateEventBtn" type="button" class="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          <span>Host Event</span>
+        </button>
+        <button id="mobileMenuBtn" type="button" class="md:hidden p-2 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100" aria-label="Toggle Menu">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Bar -->
+    <div id="mobileNavDrawer" class="hidden md:hidden border-t border-slate-200 bg-white px-4 py-2.5 space-y-1.5">
+      <div class="grid grid-cols-2 gap-1.5">
+        <button type="button" data-nav="explore" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-indigo-50 text-indigo-700">
+          <span>🔍 Explore Events</span>
+        </button>
+        <button type="button" data-nav="tickets" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-700 hover:bg-slate-100">
+          <span>🎟️ My Bookings</span>
+          <span id="mobileTicketCountBadge" class="ml-auto px-1.5 py-0.5 text-[10px] rounded-full bg-indigo-600 text-white font-bold">0</span>
+        </button>
+        <button type="button" data-nav="scanner" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-700 hover:bg-slate-100">
+          <span>📷 QR Validator</span>
+        </button>
+        <button type="button" data-nav="dashboard" class="nav-tab-btn px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 text-slate-700 hover:bg-slate-100">
+          <span>📊 Organizer Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ==========================================
+         VIEW 1: EXPLORE EVENTS (DISCOVERY & SEARCH)
+         ========================================== -->
+    <section id="view-explore" class="space-y-6">
+      <!-- Hero Banner -->
+      <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-violet-950 text-white shadow-xl border border-indigo-900/40">
+        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(#818cf8 1px, transparent 1px); background-size: 20px 20px;"></div>
+        <div class="relative p-6 sm:p-8 lg:p-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          <div class="max-w-2xl space-y-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Live Smart Ticketing • Instant QR Pass • Zero Manual Queues</span>
+            </div>
+            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+              Discover, Book &amp; Validate Events Seamlessly
+            </h1>
+            <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+              Browse technical symposiums, live concerts, workshops, and college cultural fests. Book verified digital tickets with instant UPI/Card checkout and real-time QR gate validation.
+            </p>
+            <div class="flex flex-wrap items-center gap-3 pt-1">
+              <button id="heroQuickScannerBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-indigo-50 font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+                <span>Try QR Ticket Validator</span>
+              </button>
+              <button id="heroOrganizerBtn" type="button" class="px-4 py-2.5 rounded-xl bg-indigo-600/40 hover:bg-indigo-600/60 border border-indigo-400/40 text-white font-semibold text-xs sm:text-sm transition flex items-center gap-2">
+                <span>Open Organizer Dashboard</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Mini Live Stats Card -->
+          <div class="w-full lg:w-72 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 space-y-3 shrink-0">
+            <div class="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <span class="text-xs font-semibold text-indigo-200 uppercase tracking-wider">Platform Status</span>
+              <span class="text-xs font-mono-code text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded">ONLINE</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="bg-slate-900/50 rounded-xl p-2.5">
+                <div id="heroStatEvents" class="text-xl font-extrabold text-white">6</div>
+                <div class="text-[11px] text-slate-300">Active Events</div>
+              </div>
+              <div class="bg-slate-900/50 rounded-xl p-2.5">
+                <div id="heroStatBookings" class="text-xl font-extrabold text-emerald-400">3</div>
+                <div class="text-[11px] text-slate-300">Tickets Issued</div>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-300 flex items-center justify-between pt-0.5">
+              <span>Promo Code: <strong class="text-amber-300 font-mono-code">COLLEGE20</strong></span>
+              <span class="text-indigo-200">20% OFF</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Filter Bar -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <!-- Search Input -->
+          <div class="md:col-span-5 relative">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input id="searchInput" type="text" placeholder="Search events by title, venue, city, or tag..." class="w-full pl-10 pr-8 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <button id="clearSearchBtn" type="button" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1" title="Clear search">
+              ✕
+            </button>
+          </div>
+
+          <!-- City Filter -->
+          <div class="md:col-span-3">
+            <select id="cityFilter" aria-label="Filter by City" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="ALL">All Cities &amp; Campuses</option>
+              <option value="Nagpur">Nagpur</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Pune">Pune</option>
+              <option value="Bengaluru">Bengaluru</option>
+              <option value="Hyderabad">Hyderabad</option>
+            </select>
+          </div>
+
+          <!-- Price Filter -->
+          <div class="md:col-span-2">
+            <select id="priceFilter" aria-label="Filter by Price" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="ALL">Any Price</option>
+              <option value="FREE">Free Only (₹0)</option>
+              <option value="UNDER500">Under ₹500</option>
+              <option value="500PLUS">₹500 &amp; Above</option>
+            </select>
+          </div>
+
+          <!-- Sort Order -->
+          <div class="md:col-span-2">
+            <select id="sortSelect" aria-label="Sort Events" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="DATE_ASC">Date: Soonest</option>
+              <option value="PRICE_ASC">Price: Low to High</option>
+              <option value="PRICE_DESC">Price: High to Low</option>
+              <option value="POPULAR">Most Popular</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category Pills & Reset -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
+          <div id="categoryPillsContainer" class="flex flex-wrap items-center gap-1.5">
+            <button type="button" data-category="ALL" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 text-white shadow-sm transition">All Categories</button>
+            <button type="button" data-category="Tech & Hackathon" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">💻 Tech &amp; Hackathon</button>
+            <button type="button" data-category="Music & Concert" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">🎸 Music &amp; Concert</button>
+            <button type="button" data-category="College Fest" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">🎓 College Fest</button>
+            <button type="button" data-category="Workshop" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">🛠️ Workshop</button>
+            <button type="button" data-category="Sports & E-Sports" class="cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition">🏆 Sports &amp; E-Sports</button>
+          </div>
+
+          <div class="flex items-center gap-3 ml-auto">
+            <span id="FilteredEventsCountText" class="text-xs font-medium text-slate-500">Showing 6 events</span>
+            <button id="resetFiltersBtn" type="button" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Reset Filters</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Cards Grid -->
+      <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+      <!-- Empty State when no events match -->
+      <div id="eventsEmptyState" class="hidden bg-white rounded-2xl p-10 text-center border border-slate-200 space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto text-xl">🔍</div>
+        <h3 class="text-base font-bold text-slate-800">No matching events found</h3>
+        <p class="text-xs text-slate-500 max-w-md mx-auto">Try clearing your search filter, choosing another city, or creating a new custom event from the Organizer Dashboard.</p>
+        <button id="emptyStateResetBtn" type="button" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition">Show All Events</button>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 2: MY BOOKINGS & QR TICKETS
+         ========================================== -->
+    <section id="view-tickets" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+          <h2 class="text-xl font-extrabold text-slate-900">My Booked Tickets &amp; QR Passes</h2>
+          <p class="text-xs sm:text-sm text-slate-500">Present the generated QR code at the venue gate or click "Validate in QR Scanner" to test instant check-in.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="ticketStatusFilter" aria-label="Filter Bookings by Status" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50">
+            <option value="ALL">All Tickets</option>
+            <option value="CONFIRMED">Confirmed (Unused)</option>
+            <option value="CHECKED_IN">Checked-In (Used)</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <button id="ticketsBrowseMoreBtn" type="button" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">
+            + Book Another Event
+          </button>
+        </div>
+      </div>
+
+      <!-- Tickets List Container -->
+      <div id="myTicketsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 3: QR-BASED TICKET VALIDATION SCANNER
+         ========================================== -->
+    <section id="view-scanner" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full mb-1">
+            <span>Gate Access Control Module</span>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900">QR-Based Ticket Validation &amp; Check-In</h2>
+          <p class="text-xs sm:text-sm text-slate-500">Simulate scanning a QR pass at the venue entrance, select a booked ticket below, or type a Booking ID to verify authenticity and prevent duplicate entry.</p>
+        </div>
+        <div class="flex items-center gap-3 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+          <div class="text-right">
+            <div class="text-[11px] text-slate-500 font-medium">Gate Scans Verified</div>
+            <div id="scannerVerifiedCount" class="text-lg font-extrabold text-indigo-600">0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Column: Optical QR Scanner & Manual Input -->
+        <div class="lg:col-span-5 space-y-5">
+          <!-- Optical Scanner Viewport Card -->
+          <div class="bg-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span id="cameraStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-200">Optical QR Gate Terminal #01</span>
+              </div>
+              <button id="toggleCameraSimBtn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-300 border border-slate-700 transition">
+                Pause Laser
+              </button>
+            </div>
+
+            <!-- Simulated Camera Frame -->
+            <div id="scannerViewport" class="relative h-56 rounded-xl bg-slate-950 border-2 border-dashed border-indigo-500/50 flex flex-col items-center justify-center overflow-hidden p-4">
+              <div id="scannerLaser" class="laser-line"></div>
+              <!-- Corner Reticles -->
+              <div class="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-emerald-400 rounded-tl"></div>
+              <div class="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-emerald-400 rounded-tr"></div>
+              <div class="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-emerald-400 rounded-bl"></div>
+              <div class="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-emerald-400 rounded-br"></div>
+
+              <div id="scannerPreviewQRWrapper" class="flex flex-col items-center text-center space-y-2 z-10">
+                <canvas id="scannerLiveCanvas" width="110" height="110" class="rounded-lg bg-white p-1.5 shadow-md"></canvas>
+                <p id="scannerViewportCaption" class="text-xs text-slate-300 font-medium">Select a ticket or enter Booking ID below to scan</p>
+              </div>
+            </div>
+
+            <!-- Manual Ticket ID / QR Payload Input -->
+            <form id="manualScanForm" class="space-y-2.5">
+              <label for="manualTicketIdInput" class="block text-xs font-semibold text-slate-300">Enter Ticket ID or QR Payload String</label>
+              <div class="flex gap-2">
+                <input id="manualTicketIdInput" type="text" placeholder="e.g. TBS-2026-1001" class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono-code text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                <button type="submit" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs sm:text-sm transition shrink-0">
+                  Verify &amp; Check In
+                </button>
+              </div>
+            </form>
+
+            <!-- Quick Test Sample Buttons -->
+            <div class="pt-2 border-t border-slate-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Quick One-Click Gate Scan (Booked Tickets)</span>
+                <button id="testInvalidQrBtn" type="button" class="text-[11px] font-semibold text-rose-400 hover:text-rose-300 underline">
+                  Simulate Fake Ticket
+                </button>
+              </div>
+              <div id="quickScanButtonsList" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Live Validation Result & Gate Log -->
+        <div class="lg:col-span-7 space-y-5">
+          <!-- Validation Output Card -->
+          <div id="validationResultCard" class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <div class="flex items-center gap-3 text-slate-400">
+              <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-2xl">🎟️</div>
+              <div>
+                <h3 class="text-base font-bold text-slate-800">Awaiting Ticket Scan...</h3>
+                <p class="text-xs text-slate-500">Click any ticket pill on the left or enter a Ticket ID to validate entry and mark attendance.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Gate Scan Log Table -->
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
+              <h3 class="text-sm font-bold text-slate-800">Live Gate Validation Audit Log</h3>
+              <button id="clearScanLogBtn" type="button" class="text-xs font-semibold text-slate-500 hover:text-slate-800">Clear Log</button>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                    <th class="py-2.5 px-4">Time</th>
+                    <th class="py-2.5 px-4">Ticket ID</th>
+                    <th class="py-2.5 px-4">Attendee &amp; Event</th>
+                    <th class="py-2.5 px-4">Result</th>
+                  </tr>
+                </thead>
+                <tbody id="scanAuditLogBody" class="divide-y divide-slate-100 text-xs"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 4: ORGANIZER DASHBOARD (ADMIN)
+         ========================================== -->
+    <section id="view-dashboard" class="hidden space-y-6">
+      <!-- Top Header -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full mb-1">
+            <span>Organizer Control Center</span>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900">Event Management &amp; Box Office Analytics</h2>
+          <p class="text-xs sm:text-sm text-slate-500">Monitor real-time ticket revenue, capacity utilization, attendee check-ins, and create or edit events.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <button id="exportBookingsCsvBtn" type="button" class="px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Export Bookings CSV</span>
+          </button>
+          <button id="openCreateEventModalBtn" type="button" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            <span>Create New Event</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Gross Box Office</span>
+            <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">₹</span>
+          </div>
+          <div id="kpiTotalRevenue" class="text-2xl font-extrabold text-slate-900 mt-2">₹0</div>
+          <p class="text-xs text-emerald-600 font-medium mt-1">Includes online UPI &amp; Card sales</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Tickets Sold</span>
+            <span class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">🎟️</span>
+          </div>
+          <div id="kpiTicketsSold" class="text-2xl font-extrabold text-slate-900 mt-2">0</div>
+          <p id="kpiCapacitySubtext" class="text-xs text-slate-500 mt-1">Across all active events</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">QR Checked-In</span>
+            <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">📷</span>
+          </div>
+          <div id="kpiCheckedInCount" class="text-2xl font-extrabold text-slate-900 mt-2">0</div>
+          <p id="kpiCheckInRateText" class="text-xs text-amber-600 font-medium mt-1">0% gate turnout rate</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Published Events</span>
+            <span class="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-bold text-sm">📅</span>
+          </div>
+          <div id="kpiActiveEventsCount" class="text-2xl font-extrabold text-slate-900 mt-2">6</div>
+          <p class="text-xs text-slate-500 mt-1">Live on discovery portal</p>
+        </div>
+      </div>
+
+      <!-- Charts Row (Fixed-Height Containers as required by Web App Rules) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">Tickets Sold &amp; Revenue by Event</h3>
+              <p class="text-xs text-slate-500">Live breakdown across published events</p>
+            </div>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="revenueChartCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">Ticket Check-In &amp; Status Distribution</h3>
+              <p class="text-xs text-slate-500">Confirmed vs. Checked-In vs. Cancelled</p>
+            </div>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="statusChartCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manage Events Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Manage Published Events</h3>
+            <p class="text-xs text-slate-500">Edit event details, adjust pricing or capacity, or remove events.</p>
+          </div>
+          <input id="orgEventSearchInput" type="text" placeholder="Filter events..." class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <th class="py-3 px-4">Event Name &amp; Category</th>
+                <th class="py-3 px-4">Date &amp; Venue</th>
+                <th class="py-3 px-4 text-right">Base Price</th>
+                <th class="py-3 px-4 text-right">Sold / Capacity</th>
+                <th class="py-3 px-4 text-right">Revenue</th>
+                <th class="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="organizerEventsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Attendee & Booking Records Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">All Attendee Bookings &amp; Gate Check-In Control</h3>
+            <p class="text-xs text-slate-500">Toggle check-in status directly or inspect QR passes.</p>
+          </div>
+          <select id="orgBookingEventFilter" aria-label="Filter Bookings by Event" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-white">
+            <option value="ALL">All Events</option>
+          </select>
+        </div>
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <th class="py-3 px-4">Booking ID</th>
+                <th class="py-3 px-4">Attendee</th>
+                <th class="py-3 px-4">Event &amp; Tier</th>
+                <th class="py-3 px-4 text-right">Qty &amp; Paid</th>
+                <th class="py-3 px-4">Payment</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4 text-center">Quick Actions</th>
+              </tr>
+            </thead>
+            <tbody id="organizerBookingsTableBody" class="divide-y divide-slate-100 text-xs"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================
+       MODAL 1: EVENT DETAILS & TICKET BOOKING
+       ========================================== -->
+  <div id="bookingModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <!-- Modal Header Banner -->
+      <div id="bookingModalHeader" class="p-6 text-white bg-gradient-to-r from-indigo-600 to-violet-700 relative">
+        <button id="closeBookingModalBtn" type="button" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center text-sm font-bold transition">✕</button>
+        <span id="bookingModalCategory" class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/20">Category</span>
+        <h3 id="bookingModalTitle" class="text-xl sm:text-2xl font-extrabold mt-2">Event Title</h3>
+        <p id="bookingModalMeta" class="text-xs sm:text-sm text-indigo-100 mt-1">Date • Venue</p>
+      </div>
+
+      <!-- Modal Form Body -->
+      <form id="ticketBookingForm" class="p-6 space-y-5 max-h-[78vh] overflow-y-auto custom-scrollbar">
+        <p id="bookingModalDesc" class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200/80"></p>
+
+        <!-- Step 1: Select Ticket Tier & Quantity -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label for="bookingTierSelect" class="block text-xs font-bold text-slate-700 mb-1">1. Select Ticket Tier</label>
+            <select id="bookingTierSelect" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">2. Quantity</label>
+            <div class="flex items-center border border-slate-200 rounded-xl overflow-hidden">
+              <button id="qtyMinusBtn" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700">−</button>
+              <input id="bookingQtyInput" type="number" min="1" max="10" value="1" readonly class="w-full text-center text-sm font-bold py-2 focus:outline-none" />
+              <button id="qtyPlusBtn" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Attendee Details -->
+        <div class="space-y-3 pt-2 border-t border-slate-100">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">3. Attendee Details (For QR Pass Generation)</h4>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="attendeeNameInput" class="block text-xs font-semibold text-slate-700 mb-1">Full Name *</label>
+              <input id="attendeeNameInput" type="text" required value="Aarav Deshmukh" placeholder="Enter full name" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label for="attendeeEmailInput" class="block text-xs font-semibold text-slate-700 mb-1">Email Address *</label>
+              <input id="attendeeEmailInput" type="email" required value="aarav.deshmukh@vnit.edu.in" placeholder="student@college.edu" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label for="attendeePhoneInput" class="block text-xs font-semibold text-slate-700 mb-1">Mobile Number *</label>
+              <input id="attendeePhoneInput" type="tel" required value="+91 98230 45120" placeholder="+91 98765 43210" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label for="attendeeCollegeInput" class="block text-xs font-semibold text-slate-700 mb-1">College / Organization</label>
+              <input id="attendeeCollegeInput" type="text" value="VNIT Nagpur" placeholder="College or company name" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Promo Code -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <label for="promoCodeInput" class="text-xs font-bold text-slate-700">Have a Promo / Discount Code?</label>
+            <div class="flex gap-1.5">
+              <button type="button" data-promo="COLLEGE20" class="promo-quick-btn text-[11px] font-mono-code px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">COLLEGE20 (20%)</button>
+              <button type="button" data-promo="FEST50" class="promo-quick-btn text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200">FEST50 (₹50 Off)</button>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <input id="promoCodeInput" type="text" placeholder="Enter COLLEGE20 or FEST50" class="flex-1 px-3.5 py-2 rounded-xl border border-slate-200 text-sm uppercase font-mono-code focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <button id="applyPromoBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition">Apply</button>
+          </div>
+          <p id="promoFeedbackText" class="text-xs font-medium hidden"></p>
+        </div>
+
+        <!-- Step 4: Price Summary Breakdown -->
+        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+          <div class="flex justify-between text-slate-600">
+            <span id="summaryBaseLabel">Ticket Subtotal (1 × Standard)</span>
+            <span id="summaryBaseAmount" class="font-semibold text-slate-800">₹0</span>
+          </div>
+          <div id="summaryDiscountRow" class="hidden flex justify-between text-emerald-600 font-medium">
+            <span id="summaryDiscountLabel">Promo Discount</span>
+            <span id="summaryDiscountAmount">−₹0</span>
+          </div>
+          <div class="flex justify-between text-slate-600">
+            <span>Platform &amp; Payment Gateway Fee (5%)</span>
+            <span id="summaryFeeAmount" class="font-semibold text-slate-800">₹0</span>
+          </div>
+          <div class="flex justify-between text-sm font-extrabold text-slate-900 pt-2 border-t border-slate-200">
+            <span>Total Payable Amount</span>
+            <span id="summaryTotalPayable" class="text-indigo-600 text-base">₹0</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button id="cancelBookingModalBtn" type="button" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-indigo-500/20 flex items-center gap-2 transition">
+            <span>Proceed to Payment Gateway</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 2: PAYMENT GATEWAY INTEGRATION
+       ========================================== -->
+  <div id="paymentGatewayModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <!-- Gateway Header -->
+      <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-sm">₹</div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-sm">PaySphere Secure Gateway</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold">256-Bit SSL</span>
+            </div>
+            <p id="pgOrderSubtitle" class="text-[11px] text-slate-400">Order #ORD-2026</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="text-[10px] text-slate-400 uppercase">Amount</div>
+          <div id="pgHeaderTotal" class="text-base font-extrabold text-emerald-400">₹499</div>
+        </div>
+      </div>
+
+      <!-- Payment Method Tabs -->
+      <div class="p-5 space-y-4">
+        <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl">
+          <button type="button" data-paymethod="UPI" class="pay-method-tab py-2 rounded-lg text-xs font-bold bg-white text-indigo-600 shadow-sm">📱 UPI / QR</button>
+          <button type="button" data-paymethod="CARD" class="pay-method-tab py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900">💳 Card</button>
+          <button type="button" data-paymethod="NETBANKING" class="pay-method-tab py-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900">🏦 NetBanking</button>
+        </div>
+
+        <!-- Method 1: UPI -->
+        <div id="payPanel-UPI" class="space-y-3">
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center gap-3.5">
+            <canvas id="upiQrCanvas" width="76" height="76" class="bg-white p-1 rounded-lg border border-slate-200 shrink-0"></canvas>
+            <div class="space-y-1">
+              <div class="text-xs font-bold text-slate-800">Scan UPI QR with Any App</div>
+              <p class="text-[11px] text-slate-500">Supports Google Pay, PhonePe, Paytm &amp; BHIM UPI</p>
+              <div class="flex gap-1.5 pt-1">
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">GPay</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-violet-50 text-violet-700">PhonePe</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-50 text-sky-700">Paytm</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label for="upiIdInput" class="block text-xs font-semibold text-slate-700 mb-1">Or Enter Virtual Payment Address (UPI ID)</label>
+            <div class="flex gap-2">
+              <input id="upiIdInput" type="text" value="aarav@okicici" placeholder="username@upi" class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono-code" />
+              <button id="verifyVpaBtn" type="button" class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100">Verify ID</button>
+            </div>
+            <p id="vpaVerifiedBadge" class="text-[11px] text-emerald-600 font-semibold mt-1">✓ Verified: AARAV DESHMUKH (ICICI Bank)</p>
+          </div>
+        </div>
+
+        <!-- Method 2: Card -->
+        <div id="payPanel-CARD" class="hidden space-y-3">
+          <div>
+            <label for="cardNumInput" class="block text-xs font-semibold text-slate-700 mb-1">Card Number</label>
+            <input id="cardNumInput" type="text" value="4532 •••• •••• 8891" placeholder="4532 0000 0000 0000" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono-code" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="cardExpInput" class="block text-xs font-semibold text-slate-700 mb-1">Expiry</label>
+              <input id="cardExpInput" type="text" value="08/29" placeholder="MM/YY" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono-code" />
+            </div>
+            <div>
+              <label for="cardCvvInput" class="block text-xs font-semibold text-slate-700 mb-1">CVV</label>
+              <input id="cardCvvInput" type="password" value="842" maxlength="4" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-mono-code" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Method 3: NetBanking -->
+        <div id="payPanel-NETBANKING" class="hidden space-y-2">
+          <label for="bankSelectInput" class="block text-xs font-semibold text-slate-700">Select Your Bank</label>
+          <select id="bankSelectInput" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white">
+            <option value="State Bank of India (SBI)">State Bank of India (SBI)</option>
+            <option value="HDFC Bank NetBanking">HDFC Bank NetBanking</option>
+            <option value="ICICI Bank Corporate/Retail">ICICI Bank Corporate/Retail</option>
+            <option value="Axis Bank Internet Banking">Axis Bank Internet Banking</option>
+          </select>
+        </div>
+
+        <!-- Processing Indicator -->
+        <div id="paymentProcessingBox" class="hidden p-4 rounded-xl bg-indigo-50 border border-indigo-200 text-center space-y-2">
+          <div class="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p class="text-xs font-bold text-indigo-900">Authorizing Payment &amp; Minting QR Pass...</p>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
+          <button id="closePaymentGatewayBtn" type="button" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-100">Back</button>
+          <button id="confirmPayNowBtn" type="button" class="flex-1 py-2.5 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-emerald-600/20 transition">
+            Pay &amp; Generate QR Ticket
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 3: DIGITAL QR TICKET PASS VIEWER
+       ========================================== -->
+  <div id="qrPassModal" class="hidden fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <div class="bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-5 text-white relative">
+        <button id="closeQrPassModalBtn" type="button" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm font-bold">✕</button>
+        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-200">
+          <span>EventSphere Verified E-Ticket</span>
+        </div>
+        <h3 id="passModalEventTitle" class="text-lg font-extrabold mt-1 pr-6">Event Name</h3>
+        <p id="passModalEventMeta" class="text-xs text-indigo-100 mt-0.5">Date &amp; Venue</p>
+      </div>
+
+      <!-- Ticket Body with Notches -->
+      <div class="relative p-6 space-y-5 bg-white">
+        <div class="ticket-notch-left border border-slate-200"></div>
+        <div class="ticket-notch-right border border-slate-200"></div>
+
+        <!-- QR Code Canvas Box -->
+        <div class="flex flex-col items-center justify-center bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <canvas id="passModalQrCanvas" width="168" height="168" class="bg-white p-2 rounded-xl shadow-sm border border-slate-200"></canvas>
+          <div id="passModalBookingId" class="font-mono-code text-sm font-extrabold text-slate-900 mt-2.5 tracking-wider">TBS-2026-1001</div>
+          <span id="passModalStatusBadge" class="mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">CONFIRMED — READY FOR SCAN</span>
+        </div>
+
+        <!-- Ticket Metadata Grid -->
+        <div class="grid grid-cols-2 gap-3 text-xs border-t border-dashed border-slate-200 pt-4">
+          <div>
+            <span class="text-slate-400 block text-[11px]">Attendee Name</span>
+            <strong id="passModalAttendee" class="text-slate-800">Name</strong>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[11px]">Ticket Tier &amp; Qty</span>
+            <strong id="passModalTierQty" class="text-slate-800">VIP × 2</strong>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[11px]">Total Paid</span>
+            <strong id="passModalAmountPaid" class="text-emerald-700">₹999</strong>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[11px]">Transaction Ref</span>
+            <strong id="passModalTxnId" class="font-mono-code text-slate-700">TXN-9021</strong>
+          </div>
+        </div>
+
+        <!-- Pass Actions -->
+        <div class="flex flex-wrap gap-2 pt-2">
+          <button id="passSendToScannerBtn" type="button" class="flex-1 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">
+            📷 Scan &amp; Validate Now
+          </button>
+          <button id="passPrintBtn" type="button" class="py-2.5 px-3.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition">
+            🖨️ Print / Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 4: CREATE / EDIT EVENT (ORGANIZER)
+       ========================================== -->
+  <div id="eventFormModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <h3 id="eventFormModalTitle" class="text-base font-extrabold">Create New Event</h3>
+        <button id="closeEventFormModalBtn" type="button" class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs font-bold">✕</button>
+      </div>
+
+      <form id="organizerEventForm" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <input id="editEventIdInput" type="hidden" value="" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div class="sm:col-span-2">
+            <label for="evTitleInput" class="block text-xs font-bold text-slate-700 mb-1">Event Title *</label>
+            <input id="evTitleInput" type="text" required placeholder="e.g. TechnoSphere AI & Robotics Summit 2026" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div>
+            <label for="evCategoryInput" class="block text-xs font-bold text-slate-700 mb-1">Category *</label>
+            <select id="evCategoryInput" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white">
+              <option value="Tech & Hackathon">Tech &amp; Hackathon</option>
+              <option value="Music & Concert">Music &amp; Concert</option>
+              <option value="College Fest">College Fest</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Sports & E-Sports">Sports &amp; E-Sports</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="evCityInput" class="block text-xs font-bold text-slate-700 mb-1">City *</label>
+            <select id="evCityInput" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm bg-white">
+              <option value="Nagpur">Nagpur</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Pune">Pune</option>
+              <option value="Bengaluru">Bengaluru</option>
+              <option value="Hyderabad">Hyderabad</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="evDateInput" class="block text-xs font-bold text-slate-700 mb-1">Event Date *</label>
+            <input id="evDateInput" type="date" required value="2026-11-18" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div>
+            <label for="evTimeInput" class="block text-xs font-bold text-slate-700 mb-1">Start Time *</label>
+            <input id="evTimeInput" type="text" required value="10:00 AM IST" placeholder="e.g. 06:30 PM IST" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label for="evVenueInput" class="block text-xs font-bold text-slate-700 mb-1">Venue / Auditorium *</label>
+            <input id="evVenueInput" type="text" required placeholder="e.g. VNIT Convocation Hall, South Ambazari Road" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div>
+            <label for="evPriceInput" class="block text-xs font-bold text-slate-700 mb-1">Base Ticket Price (₹) *</label>
+            <input id="evPriceInput" type="number" min="0" max="50000" required value="299" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div>
+            <label for="evCapacityInput" class="block text-xs font-bold text-slate-700 mb-1">Total Seat Capacity *</label>
+            <input id="evCapacityInput" type="number" min="10" max="10000" required value="250" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label for="evOrganizerInput" class="block text-xs font-bold text-slate-700 mb-1">Organizer / Club Name *</label>
+            <input id="evOrganizerInput" type="text" required value="IEEE Student Branch & ACM Chapter" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div class="sm:col-span-2">
+            <label for="evDescInput" class="block text-xs font-bold text-slate-700 mb-1">Event Description *</label>
+            <textarea id="evDescInput" rows="3" required placeholder="Highlight key speakers, perks, certificates, and schedule..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-sm"></textarea>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button id="cancelEventFormBtn" type="button" class="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition">Save &amp; Publish Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION BANNER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-800">EventSphere TBS</span>
+        <span>— Event Management &amp; QR Ticket Booking System</span>
+      </div>
+      <div>Built with HTML5, Tailwind CSS, Chart.js &amp; Deterministic QR Matrix Engine</div>
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       APPLICATION JAVASCRIPT LOGIC
+       ========================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // --- INITIAL SEED DATA ---
+      const INITIAL_EVENTS = [
+        {
+          id: 'EVT-101',
+          title: 'Axis TechFest & National AI Hackathon 2026',
+          category: 'Tech & Hackathon',
+          date: '2026-11-14',
+          time: '09:30 AM IST',
+          city: 'Nagpur',
+          venue: 'VNIT Campus Auditorium, South Ambazari Rd',
+          organizer: 'VNIT Technical Council',
+          price: 299,
+          capacity: 300,
+          sold: 214,
+          badge: 'Filling Fast',
+          gradient: 'from-indigo-600 via-blue-600 to-cyan-500',
+          icon: '💻',
+          description: '36-hour national coding sprint, generative AI workshops, robotics battleground, and keynote talks from industry architects. Includes lunch, swag kit, and verified participation certificate.'
+        },
+        {
+          id: 'EVT-102',
+          title: 'Sunburn Campus Acoustic & EDM Night',
+          category: 'Music & Concert',
+          date: '2026-11-21',
+          time: '06:00 PM IST',
+          city: 'Pune',
+          venue: 'Balewadi High Street Open Arena',
+          organizer: 'Campus Live Entertainment',
+          price: 699,
+          capacity: 800,
+          sold: 645,
+          badge: 'Trending',
+          gradient: 'from-fuchsia-600 via-purple-600 to-indigo-600',
+          icon: '🎸',
+          description: 'Experience an electrifying evening of indie fusion, progressive house, and laser visuals featuring top touring DJs and college bands. Instant QR wristband exchange at Gate 2.'
+        },
+        {
+          id: 'EVT-103',
+          title: 'Full-Stack Cloud & DevOps Bootcamp',
+          category: 'Workshop',
+          date: '2026-11-08',
+          time: '10:30 AM IST',
+          city: 'Bengaluru',
+          venue: 'NIMHANS Convention Centre, Hosur Rd',
+          organizer: 'CloudNative India Chapter',
+          price: 0,
+          capacity: 180,
+          sold: 142,
+          badge: 'Free Entry',
+          gradient: 'from-emerald-600 via-teal-600 to-cyan-600',
+          icon: '🛠️',
+          description: 'Hands-on workshop covering Docker, Kubernetes, CI/CD pipelines, and React microservices. Open to engineering students and developers with free digital certification.'
+        },
+        {
+          id: 'EVT-104',
+          title: 'Aarohan Inter-College Cultural & Drama Fest',
+          category: 'College Fest',
+          date: '2026-11-28',
+          time: '11:00 AM IST',
+          city: 'Nagpur',
+          venue: 'Dr. Vasantrao Deshpande Hall, Civil Lines',
+          organizer: 'Orange City Student Cultural Forum',
+          price: 199,
+          capacity: 500,
+          sold: 318,
+          badge: 'Student Favorite',
+          gradient: 'from-amber-500 via-orange-600 to-rose-600',
+          icon: '🎓',
+          description: 'Three days of street play (Nukkad Natak), battle of bands, classical dance showcase, fashion choreography, and food stalls across 25+ participating colleges.'
+        },
+        {
+          id: 'EVT-105',
+          title: 'Valorant & BGMI Pro Campus Championship',
+          category: 'Sports & E-Sports',
+          date: '2026-12-05',
+          time: '12:00 PM IST',
+          city: 'Mumbai',
+          venue: 'Jio World Drive E-Sports Arena, BKC',
+          organizer: 'NextGen Gaming League',
+          price: 399,
+          capacity: 400,
+          sold: 289,
+          badge: '₹2L Prize Pool',
+          gradient: 'from-rose-600 via-red-600 to-orange-500',
+          icon: '🏆',
+          description: 'Watch top 16 collegiate rosters battle live on LAN stage with shoutcasters, gaming gear giveaways, VR simulator booths, and meet-and-greet sessions.'
+        },
+        {
+          id: 'EVT-106',
+          title: 'Product Design & UI/UX Systems Masterclass',
+          category: 'Workshop',
+          date: '2026-12-12',
+          time: '02:00 PM IST',
+          city: 'Hyderabad',
+          venue: 'T-Hub Phase 2 Knowledge City, Madhapur',
+          organizer: 'DesignGuild Collective',
+          price: 450,
+          capacity: 150,
+          sold: 96,
+          badge: 'Certificate Included',
+          gradient: 'from-violet-600 via-indigo-600 to-blue-600',
+          icon: '✨',
+          description: 'Master Figma design tokens, accessibility audits, micro-interactions, and portfolio storytelling with live critiques from senior product designers.'
+        }
+      ];
+
+      const INITIAL_BOOKINGS = [
+        {
+          bookingId: 'TBS-2026-1001',
+          eventId: 'EVT-101',
+          eventTitle: 'Axis TechFest & National AI Hackathon 2026',
+          eventDate: '2026-11-14',
+          eventTime: '09:30 AM IST',
+          venue: 'VNIT Campus Auditorium, Nagpur',
+          attendeeName: 'Aarav Deshmukh',
+          attendeeEmail: 'aarav.deshmukh@vnit.edu.in',
+          attendeePhone: '+91 98230 45120',
+          college: 'VNIT Nagpur',
+          tier: 'Standard Pass',
+          qty: 2,
+          amountPaid: 502,
+          paymentMethod: 'UPI (aarav@okicici)',
+          txnId: 'TXN-894120',
+          status: 'CONFIRMED',
+          bookedAt: '2026-10-26 14:20',
+          checkedInAt: null
+        },
+        {
+          bookingId: 'TBS-2026-1002',
+          eventId: 'EVT-104',
+          eventTitle: 'Aarohan Inter-College Cultural & Drama Fest',
+          eventDate: '2026-11-28',
+          eventTime: '11:00 AM IST',
+          venue: 'Deshpande Hall, Civil Lines, Nagpur',
+          attendeeName: 'Sneha Kulkarni',
+          attendeeEmail: 'sneha.k@ycce.edu',
+          attendeePhone: '+91 97654 11209',
+          college: 'YCCE Nagpur',
+          tier: 'VIP Front-Row Pass',
+          qty: 1,
+          amountPaid: 376,
+          paymentMethod: 'Card (••8891)',
+          txnId: 'TXN-894385',
+          status: 'CHECKED_IN',
+          bookedAt: '2026-10-27 11:05',
+          checkedInAt: '2026-10-28 17:45'
+        },
+        {
+          bookingId: 'TBS-2026-1003',
+          eventId: 'EVT-102',
+          eventTitle: 'Sunburn Campus Acoustic & EDM Night',
+          eventDate: '2026-11-21',
+          eventTime: '06:00 PM IST',
+          venue: 'Balewadi High Street Arena, Pune',
+          attendeeName: 'Rohan Joshi',
+          attendeeEmail: 'rohan.joshi@coep.ac.in',
+          attendeePhone: '+91 91580 33410',
+          college: 'COEP Technological University',
+          tier: 'Student Discount Pass',
+          qty: 3,
+          amountPaid: 1540,
+          paymentMethod: 'NetBanking (SBI)',
+          txnId: 'TXN-894910',
+          status: 'CONFIRMED',
+          bookedAt: '2026-10-28 09:15',
+          checkedInAt: null
+        }
+      ];
+
+      // --- APPLICATION STATE ---
+      let state = {
+        activeView: 'explore',
+        events: [],
+        bookings: [],
+        scanLogs: [
+          {
+            time: '17:45:12',
+            bookingId: 'TBS-2026-1002',
+            attendee: 'Sneha Kulkarni',
+            eventTitle: 'Aarohan Inter-College Cultural & Drama Fest',
+            result: 'VALIDATED'
+          }
+        ],
+        filters: {
+          search: '',
+          category: 'ALL',
+          city: 'ALL',
+          price: 'ALL',
+          sort: 'DATE_ASC',
+          ticketStatus: 'ALL',
+          orgEventSearch: '',
+          orgBookingEvent: 'ALL'
+        },
+        activeBookingDraft: null,
+        selectedPaymentMethod: 'UPI',
+        cameraLaserActive: true,
+        activePassModalBookingId: null
+      };
+
+      // Load or initialize state safely
+      function loadState() {
+        try {
+          const savedEvents = localStorage.getItem('tbs_events_v2');
+          const savedBookings = localStorage.getItem('tbs_bookings_v2');
+          state.events = savedEvents ? JSON.parse(savedEvents) : JSON.parse(JSON.stringify(INITIAL_EVENTS));
+          state.bookings = savedBookings ? JSON.parse(savedBookings) : JSON.parse(JSON.stringify(INITIAL_BOOKINGS));
+        } catch (err) {
+          state.events = JSON.parse(JSON.stringify(INITIAL_EVENTS));
+          state.bookings = JSON.parse(JSON.stringify(INITIAL_BOOKINGS));
+        }
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem('tbs_events_v2', JSON.stringify(state.events));
+          localStorage.setItem('tbs_bookings_v2', JSON.stringify(state.bookings));
+        } catch (err) {
+          // Ignore storage quota errors inside sandboxed iframe
+        }
+      }
+
+      // --- DETERMINISTIC QR MATRIX GENERATOR ON HTML5 CANVAS ---
+      function drawQRCodeOnCanvas(canvasEl, textPayload) {
+        if (!canvasEl) return;
+        const ctx = canvasEl.getContext('2d');
+        const size = canvasEl.width;
+        const modules = 21; // Version 1 QR grid size
+        const margin = 2;
+        const totalModules = modules + margin * 2;
+        const cellSize = size / totalModules;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, size, size);
+
+        // Compute deterministic hash stream from textPayload
+        let hash = 2166136261;
+        const str = String(textPayload || 'TBS-QR');
+        for (let i = 0; i < str.length; i++) {
+          hash ^= str.charCodeAt(i);
+          hash = Math.imul(hash, 16777619);
+        }
+
+        function isFinderPattern(r, c) {
+          const topLeft = r < 7 && c < 7;
+          const topRight = r < 7 && c >= modules - 7;
+          const bottomLeft = r >= modules - 7 && c < 7;
+          return topLeft || topRight || bottomLeft;
+        }
+
+        function drawFinder(startR, startC) {
+          for (let r = 0; r < 7; r++) {
+            for (let c = 0; c < 7; c++) {
+              const isBorder = r === 0 || r === 6 || c === 0 || c === 6;
+              const isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4;
+              if (isBorder || isInner) {
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(
+                  (startC + c + margin) * cellSize,
+                  (startR + r + margin) * cellSize,
+                  Math.ceil(cellSize),
+                  Math.ceil(cellSize)
+                );
+              }
+            }
+          }
+        }
+
+        drawFinder(0, 0);
+        drawFinder(0, modules - 7);
+        drawFinder(modules - 7, 0);
+
+        // Fill data modules deterministically
+        let seed = Math.abs(hash) || 1234567;
+        for (let r = 0; r < modules; r++) {
+          for (let c = 0; c < modules; c++) {
+            if (isFinderPattern(r, c)) continue;
+            // Keep separator around finder patterns white
+            if (
+              (r === 7 && (c < 8 || c >= modules - 8)) ||
+              (c === 7 && (r < 8 || r >= modules - 8)) ||
+              (r === modules - 8 && c < 8) ||
+              (c === modules - 8 && r < 7)
+            ) {
+              continue;
+            }
+            // Timing patterns
+            if (r === 6 || c === 6) {
+              if ((r + c) % 2 === 0) {
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect((c + margin) * cellSize, (r + margin) * cellSize, Math.ceil(cellSize), Math.ceil(cellSize));
+              }
+              continue;
+            }
+            seed = (seed * 1664525 + 1013904223 + r * 31 + c * 17) >>> 0;
+            const charInfluence = str.charCodeAt((r * modules + c) % str.length) || 7;
+            if (((seed ^ charInfluence) & 3) !== 0) {
+              ctx.fillStyle = '#0f172a';
+              ctx.fillRect((c + margin) * cellSize, (r + margin) * cellSize, Math.ceil(cellSize), Math.ceil(cellSize));
+            }
+          }
+        }
+      }
+
+      // --- TOAST NOTIFICATIONS ---
+      function showToast(message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const bgClass =
+          type === 'error'
+            ? 'bg-rose-600 text-white'
+            : type === 'warning'
+            ? 'bg-amber-500 text-slate-950'
+            : 'bg-slate-900 text-white';
+        toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg border border-white/10 text-xs font-bold flex items-center justify-between gap-3 transition-all ${bgClass}`;
+        toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => toast.remove(), 250);
+        }, 3200);
+      }
+
+      function escapeHtml(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatINR(num) {
+        const n = Number(num) || 0;
+        return '₹' + n.toLocaleString('en-IN');
+      }
+
+      // --- NAVIGATION CONTROLLER ---
+      function switchView(viewName) {
+        state.activeView = viewName;
+        const views = ['explore', 'tickets', 'scanner', 'dashboard'];
+        views.forEach((v) => {
+          const el = document.getElementById(`view-${v}`);
+          if (el) el.classList.toggle('hidden', v !== viewName);
+        });
+
+        // Update nav buttons styling
+        document.querySelectorAll('.nav-tab-btn').forEach((btn) => {
+          const target = btn.getAttribute('data-nav');
+          const isActive = target === viewName;
+          if (btn.closest('#mobileNavDrawer')) {
+            btn.className = `nav-tab-btn px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${
+              isActive ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+            }`;
+          } else {
+            btn.className = `nav-tab-btn px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${
+              isActive ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`;
+          }
+        });
+
+        // Close mobile drawer if open
+        document.getElementById('mobileNavDrawer').classList.add('hidden');
+
+        // Refresh specific view content
+        renderAll();
+      }
+
+      // --- RENDER EXPLORE EVENTS ---
+      function getFilteredEvents() {
+        return state.events
+          .filter((ev) => {
+            const q = state.filters.search.trim().toLowerCase();
+            if (q) {
+              const hay = `${ev.title} ${ev.category} ${ev.city} ${ev.venue} ${ev.organizer} ${ev.description}`.toLowerCase();
+              if (!hay.includes(q)) return false;
+            }
+            if (state.filters.category !== 'ALL' && ev.category !== state.filters.category) {
+              return false;
+            }
+            if (state.filters.city !== 'ALL' && ev.city !== state.filters.city) {
+              return false;
+            }
+            if (state.filters.price === 'FREE' && ev.price !== 0) return false;
+            if (state.filters.price === 'UNDER500' && ev.price >= 500) return false;
+            if (state.filters.price === '500PLUS' && ev.price < 500) return false;
+            return true;
+          })
+          .sort((a, b) => {
+            if (state.filters.sort === 'PRICE_ASC') return a.price - b.price;
+            if (state.filters.sort === 'PRICE_DESC') return b.price - a.price;
+            if (state.filters.sort === 'POPULAR') return b.sold - a.sold;
+            return String(a.date).localeCompare(String(b.date));
+          });
+      }
+
+      function renderExploreEvents() {
+        const list = getFilteredEvents();
+        const grid = document.getElementById('eventsGrid');
+        const emptyState = document.getElementById('eventsEmptyState');
+        const countText = document.getElementById('FilteredEventsCountText');
+
+        countText.textContent = `Showing ${list.length} of ${state.events.length} events`;
+        document.getElementById('clearSearchBtn').classList.toggle('hidden', !state.filters.search);
+
+        if (list.length === 0) {
+          grid.innerHTML = '';
+          emptyState.classList.remove('hidden');
+          return;
+        }
+        emptyState.classList.add('hidden');
+
+        grid.innerHTML = list
+          .map((ev) => {
+            const seatsLeft = Math.max(0, ev.capacity - ev.sold);
+            const pctBooked = Math.min(100, Math.round((ev.sold / Math.max(1, ev.capacity)) * 100));
+            const priceLabel = ev.price === 0 ? 'FREE' : formatINR(ev.price);
+            const isSoldOut = seatsLeft === 0;
+
+            return `
+              <article class="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-xl transition-all duration-200 flex flex-col overflow-hidden group">
+                <!-- Card Top Visual Header -->
+                <div class="h-36 bg-gradient-to-br ${ev.gradient || 'from-indigo-600 to-violet-600'} p-4 text-white relative flex flex-col justify-between">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/25 backdrop-blur-sm">
+                      ${escapeHtml(ev.icon || '🎟️')} ${escapeHtml(ev.category)}
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-white text-slate-900 shadow-sm">
+                      ${escapeHtml(ev.badge || 'Open')}
+                    </span>
+                  </div>
+                  <div>
+                    <div class="text-xs font-semibold text-white/90 flex items-center gap-1.5">
+                      <span>📍 ${escapeHtml(ev.city)}</span>
+                      <span>•</span>
+                      <span>📅 ${escapeHtml(ev.date)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div class="space-y-2">
+                    <h3 class="text-base font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors leading-snug">
+                      ${escapeHtml(ev.title)}
+                    </h3>
+                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      ${escapeHtml(ev.description)}
+                    </p>
+                    <div class="pt-1 text-xs text-slate-600 space-y-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">🏛️</span>
+                        <span class="truncate font-medium">${escapeHtml(ev.venue)}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">🕒</span>
+                        <span>${escapeHtml(ev.time)} • By ${escapeHtml(ev.organizer)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="space-y-3 pt-3 border-t border-slate-100">
+                    <!-- Capacity Progress Bar -->
+                    <div>
+                      <div class="flex justify-between text-[11px] font-semibold mb-1">
+                        <span class="text-slate-500">${ev.sold} booked (${pctBooked}%)</span>
+                        <span class="${seatsLeft < 30 ? 'text-rose-600 font-bold' : 'text-emerald-600'}">${seatsLeft} seats left</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-indigo-600 rounded-full" style="width: ${pctBooked}%"></div>
+                      </div>
+                    </div>
+
+                    <!-- Price & Book CTA -->
+                    <div class="flex items-center justify-between gap-2 pt-1">
+                      <div>
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Starting At</span>
+                        <span class="text-lg font-extrabold text-slate-900">${priceLabel}</span>
+                      </div>
+                      <button
+                        type="button"
+                        data-book-event="${escapeHtml(ev.id)}"
+                        ${isSoldOut ? 'disabled' : ''}
+                        class="px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-sm ${
+                          isSoldOut
+                            ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/15'
+                        }"
+                      >
+                        ${isSoldOut ? 'Sold Out' : 'Book Tickets →'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            `;
+          })
+          .join('');
+      }
+
+      // --- RENDER MY BOOKINGS & QR TICKETS ---
+      function renderMyTickets() {
+        const container = document.getElementById('myTicketsContainer');
+        const filterVal = state.filters.ticketStatus;
+
+        const filtered = state.bookings.filter((b) => {
+          if (filterVal === 'ALL') return true;
+          return b.status === filterVal;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="col-span-full bg-white rounded-2xl p-10 text-center border border-slate-200 space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-xl">🎟️</div>
+              <h3 class="text-base font-bold text-slate-800">No bookings match this filter</h3>
+              <p class="text-xs text-slate-500">Book an event from the Explore page to generate your instant QR ticket pass.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = filtered
+          .map((b) => {
+            const statusBadge =
+              b.status === 'CONFIRMED'
+                ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">✓ CONFIRMED</span>'
+                : b.status === 'CHECKED_IN'
+                ? '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800">📷 CHECKED-IN AT GATE</span>'
+                : '<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800">✕ CANCELLED</span>';
+
+            return `
+              <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col sm:flex-row">
+                <!-- Left QR Column -->
+                <div class="bg-slate-50 p-4 sm:w-44 border-b sm:border-b-0 sm:border-r border-dashed border-slate-200 flex flex-col items-center justify-center text-center shrink-0">
+                  <canvas data-qr-booking="${escapeHtml(b.bookingId)}" width="112" height="112" class="bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm"></canvas>
+                  <span class="font-mono-code text-xs font-bold text-slate-800 mt-2">${escapeHtml(b.bookingId)}</span>
+                  <span class="text-[10px] text-slate-400">Scan at Gate</span>
+                </div>
+
+                <!-- Right Details Column -->
+                <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div class="space-y-1.5">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                      ${statusBadge}
+                      <span class="text-[11px] font-mono-code text-slate-400">${escapeHtml(b.txnId)}</span>
+                    </div>
+                    <h3 class="text-base font-extrabold text-slate-900 leading-snug">${escapeHtml(b.eventTitle)}</h3>
+                    <p class="text-xs text-slate-500">📅 ${escapeHtml(b.eventDate)} • ${escapeHtml(b.eventTime)}</p>
+                    <p class="text-xs text-slate-500">📍 ${escapeHtml(b.venue)}</p>
+                  </div>
+
+                  <div class="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
+                    <div>
+                      <span class="text-[10px] text-slate-400 block">Attendee</span>
+                      <strong class="text-slate-800 truncate block">${escapeHtml(b.attendeeName)}</strong>
+                    </div>
+                    <div>
+                      <span class="text-[10px] text-slate-400 block">Pass Tier</span>
+                      <strong class="text-slate-800 truncate block">${escapeHtml(b.tier)} × ${b.qty}</strong>
+                    </div>
+                    <div>
+                      <span class="text-[10px] text-slate-400 block">Total Paid</span>
+                      <strong class="text-emerald-700">${formatINR(b.amountPaid)}</strong>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <button type="button" data-open-pass="${escapeHtml(b.bookingId)}" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">
+                      View QR Pass
+                    </button>
+                    <button type="button" data-scan-now="${escapeHtml(b.bookingId)}" class="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition">
+                      📷 Validate in Scanner
+                    </button>
+                    ${
+                      b.status === 'CONFIRMED'
+                        ? `<button type="button" data-cancel-booking="${escapeHtml(b.bookingId)}" class="ml-auto px-2.5 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-semibold transition">Cancel</button>`
+                        : ''
+                    }
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join('');
+
+        // Draw QR codes on each ticket canvas
+        container.querySelectorAll('canvas[data-qr-booking]').forEach((canvas) => {
+          const bId = canvas.getAttribute('data-qr-booking');
+          drawQRCodeOnCanvas(canvas, `EVENTSPHERE|${bId}`);
+        });
+      }
+
+      // --- RENDER QR SCANNER & VALIDATION ---
+      function renderScannerView() {
+        const totalValidBookings = state.bookings.filter((b) => b.status !== 'CANCELLED').length;
+        const checkedInCount = state.bookings.filter((b) => b.status === 'CHECKED_IN').length;
+        document.getElementById('scannerVerifiedCount').textContent = `${checkedInCount} / ${totalValidBookings} Checked In`;
+
+        // Quick scan buttons for all bookings
+        const quickList = document.getElementById('quickScanButtonsList');
+        quickList.innerHTML = state.bookings
+          .map((b) => {
+            const dotColor =
+              b.status === 'CONFIRMED'
+                ? 'bg-emerald-400'
+                : b.status === 'CHECKED_IN'
+                ? 'bg-amber-400'
+                : 'bg-rose-400';
+            return `
+              <button
+                type="button"
+                data-quick-scan="${escapeHtml(b.bookingId)}"
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left flex items-center gap-2 transition"
+              >
+                <span class="w-2 h-2 rounded-full ${dotColor}"></span>
+                <div>
+                  <div class="text-[11px] font-mono-code font-bold text-white">${escapeHtml(b.bookingId)}</div>
+                  <div class="text-[10px] text-slate-400">${escapeHtml(b.attendeeName)} (${escapeHtml(b.status)})</div>
+                </div>
+              </button>
+            `;
+          })
+          .join('');
+
+        // Render Audit Log
+        const logBody = document.getElementById('scanAuditLogBody');
+        if (state.scanLogs.length === 0) {
+          logBody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400">No gate scans recorded in this session yet.</td></tr>`;
+        } else {
+          logBody.innerHTML = state.scanLogs
+            .map((entry) => {
+              const badge =
+                entry.result === 'VALIDATED'
+                  ? '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">✓ VALID ENTRY</span>'
+                  : entry.result === 'DUPLICATE'
+                  ? '<span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">⚠ ALREADY USED</span>'
+                  : '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">✕ INVALID</span>';
+              return `
+                <tr>
+                  <td class="py-2.5 px-4 font-mono-code text-slate-500">${escapeHtml(entry.time)}</td>
+                  <td class="py-2.5 px-4 font-mono-code font-bold text-slate-800">${escapeHtml(entry.bookingId)}</td>
+                  <td class="py-2.5 px-4">
+                    <div class="font-semibold text-slate-800">${escapeHtml(entry.attendee)}</div>
+                    <div class="text-[11px] text-slate-400 truncate max-w-xs">${escapeHtml(entry.eventTitle)}</div>
+                  </td>
+                  <td class="py-2.5 px-4">${badge}</td>
+                </tr>
+              `;
+            })
+            .join('');
+        }
+      }
+
+      function validateTicketById(rawInput) {
+        const cleanId = String(rawInput || '')
+          .trim()
+          .replace(/^EVENTSPHERE\|/i, '')
+          .toUpperCase();
+        if (!cleanId) {
+          showToast('Please enter or select a Ticket ID to validate.', 'warning');
+          return;
+        }
+
+        document.getElementById('manualTicketIdInput').value = cleanId;
+        const liveCanvas = document.getElementById('scannerLiveCanvas');
+        drawQRCodeOnCanvas(liveCanvas, `EVENTSPHERE|${cleanId}`);
+        document.getElementById('scannerViewportCaption').textContent = `Scanned Payload: EVENTSPHERE|${cleanId}`;
+
+        const booking = state.bookings.find((b) => b.bookingId.toUpperCase() === cleanId);
+        const nowTime = new Date().toLocaleTimeString('en-IN', { hour12: false });
+        const resultCard = document.getElementById('validationResultCard');
+
+        if (!booking) {
+          state.scanLogs.unshift({
+            time: nowTime,
+            bookingId: cleanId,
+            attendee: 'Unknown Bearer',
+            eventTitle: 'Unrecognized QR Signature',
+            result: 'INVALID'
+          });
+          resultCard.className = 'bg-rose-50 rounded-2xl p-6 border-2 border-rose-300 shadow-sm space-y-3';
+          resultCard.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-2xl font-black">✕</div>
+                <div>
+                  <span class="text-[11px] font-extrabold uppercase tracking-wider text-rose-700">Access Denied — Invalid QR</span>
+                  <h3 class="text-lg font-extrabold text-rose-950">Ticket Not Found in Registry</h3>
+                </div>
+              </div>
+              <span class="font-mono-code text-xs font-bold px-2.5 py-1 rounded bg-rose-200 text-rose-900">${escapeHtml(cleanId)}</span>
+            </div>
+            <p class="text-xs text-rose-800">No matching booking record exists for <strong>${escapeHtml(cleanId)}</strong>. Do not permit entry.</p>
+          `;
+          showToast(`Invalid Ticket ID: ${cleanId}`, 'error');
+          renderScannerView();
+          return;
+        }
+
+        if (booking.status === 'CANCELLED') {
+          state.scanLogs.unshift({
+            time: nowTime,
+            bookingId: booking.bookingId,
+            attendee: booking.attendeeName,
+            eventTitle: booking.eventTitle,
+            result: 'INVALID'
+          });
+          resultCard.className = 'bg-rose-50 rounded-2xl p-6 border-2 border-rose-300 shadow-sm space-y-3';
+          resultCard.innerHTML = `
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-2xl font-black">✕</div>
+              <div>
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-rose-700">Cancelled Booking</span>
+                <h3 class="text-lg font-extrabold text-rose-950">This Ticket Was Cancelled / Refunded</h3>
+              </div>
+            </div>
+            <p class="text-xs text-rose-800">Holder: <strong>${escapeHtml(booking.attendeeName)}</strong> • Event: ${escapeHtml(booking.eventTitle)}</p>
+          `;
+          showToast('Cancelled ticket scanned — entry denied.', 'error');
+          renderScannerView();
+          return;
+        }
+
+        if (booking.status === 'CHECKED_IN') {
+          state.scanLogs.unshift({
+            time: nowTime,
+            bookingId: booking.bookingId,
+            attendee: booking.attendeeName,
+            eventTitle: booking.eventTitle,
+            result: 'DUPLICATE'
+          });
+          resultCard.className = 'bg-amber-50 rounded-2xl p-6 border-2 border-amber-300 shadow-sm space-y-4';
+          resultCard.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-2xl font-black">!</div>
+                <div>
+                  <span class="text-[11px] font-extrabold uppercase tracking-wider text-amber-800">Anti-Passback Alert</span>
+                  <h3 class="text-lg font-extrabold text-amber-950">Ticket Already Checked-In!</h3>
+                  <p class="text-xs text-amber-800">First scanned at: <strong>${escapeHtml(booking.checkedInAt || 'Earlier today')}</strong></p>
+                </div>
+              </div>
+              <button type="button" data-reset-checkin="${escapeHtml(booking.bookingId)}" class="px-3 py-1.5 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-950 text-xs font-bold transition">
+                Reset to Unused
+              </button>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white/80 p-3.5 rounded-xl border border-amber-200 text-xs">
+              <div><span class="text-slate-400 block">Attendee</span><strong class="text-slate-900">${escapeHtml(booking.attendeeName)}</strong></div>
+              <div><span class="text-slate-400 block">Pass Tier &amp; Qty</span><strong class="text-slate-900">${escapeHtml(booking.tier)} × ${booking.qty}</strong></div>
+              <div><span class="text-slate-400 block">Event</span><strong class="text-slate-900 truncate block">${escapeHtml(booking.eventTitle)}</strong></div>
+            </div>
+          `;
+          showToast(`Duplicate Scan: ${booking.bookingId} was already checked in.`, 'warning');
+          renderScannerView();
+          return;
+        }
+
+        // Valid unused ticket -> Mark as CHECKED_IN
+        booking.status = 'CHECKED_IN';
+        booking.checkedInAt = new Date().toISOString().slice(0, 10) + ' ' + nowTime;
+        saveState();
+
+        state.scanLogs.unshift({
+          time: nowTime,
+          bookingId: booking.bookingId,
+          attendee: booking.attendeeName,
+          eventTitle: booking.eventTitle,
+          result: 'VALIDATED'
+        });
+
+        resultCard.className = 'bg-emerald-50 rounded-2xl p-6 border-2 border-emerald-400 shadow-sm space-y-4';
+        resultCard.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-2xl font-black">✓</div>
+              <div>
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800">QR Signature Verified</span>
+                <h3 class="text-lg font-extrabold text-emerald-950">Check-In Successful — Admit ${booking.qty} Guest(s)</h3>
+                <p class="text-xs text-emerald-800">Timestamp recorded: ${escapeHtml(booking.checkedInAt)}</p>
+              </div>
+            </div>
+            <span class="font-mono-code text-xs font-bold px-2.5 py-1 rounded bg-emerald-200 text-emerald-900">${escapeHtml(booking.bookingId)}</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white p-3.5 rounded-xl border border-emerald-200 text-xs">
+            <div><span class="text-slate-400 block">Attendee</span><strong class="text-slate-900">${escapeHtml(booking.attendeeName)}</strong></div>
+            <div><span class="text-slate-400 block">College/Org</span><strong class="text-slate-900">${escapeHtml(booking.college || 'N/A')}</strong></div>
+            <div><span class="text-slate-400 block">Tier &amp; Admits</span><strong class="text-indigo-700">${escapeHtml(booking.tier)} (×${booking.qty})</strong></div>
+            <div><span class="text-slate-400 block">Amount Paid</span><strong class="text-emerald-700">${formatINR(booking.amountPaid)}</strong></div>
+          </div>
+        `;
+        showToast(`Verified ${booking.bookingId} — Welcome ${booking.attendeeName}!`, 'success');
+        renderAll();
+      }
+
+      // --- RENDER ORGANIZER DASHBOARD & CHARTS ---
+      let revenueChartInstance = null;
+      let statusChartInstance = null;
+
+      function renderOrganizerDashboard() {
+        // Calculate KPI metrics
+        const activeBookings = state.bookings.filter((b) => b.status !== 'CANCELLED');
+        const bookingsRevenue = activeBookings.reduce((sum, b) => sum + (Number(b.amountPaid) || 0), 0);
+        const historicalRevenue = state.events.reduce((sum, ev) => sum + ev.sold * ev.price, 0);
+        const totalBoxOffice = Math.max(bookingsRevenue, historicalRevenue);
+
+        const totalCapacity = state.events.reduce((sum, ev) => sum + Number(ev.capacity || 0), 0);
+        const totalSold = state.events.reduce((sum, ev) => sum + Number(ev.sold || 0), 0);
+        const checkedInBookings = state.bookings.filter((b) => b.status === 'CHECKED_IN').length;
+        const checkInPct = activeBookings.length > 0 ? Math.round((checkedInBookings / activeBookings.length) * 100) : 0;
+
+        document.getElementById('kpiTotalRevenue').textContent = formatINR(totalBoxOffice);
+        document.getElementById('kpiTicketsSold').textContent = `${totalSold.toLocaleString('en-IN')} / ${totalCapacity.toLocaleString('en-IN')}`;
+        document.getElementById('kpiCapacitySubtext').textContent = `${Math.round((totalSold / Math.max(1, totalCapacity)) * 100)}% overall seat occupancy`;
+        document.getElementById('kpiCheckedInCount').textContent = `${checkedInBookings} / ${activeBookings.length} Passes`;
+        document.getElementById('kpiCheckInRateText').textContent = `${checkInPct}% of digital passes scanned at gate`;
+        document.getElementById('kpiActiveEventsCount').textContent = String(state.events.length);
+
+        // Populate event filter dropdown for bookings table
+        const eventSelect = document.getElementById('orgBookingEventFilter');
+        const currentSelected = state.filters.orgBookingEvent;
+        eventSelect.innerHTML =
+          `<option value="ALL">All Events (${state.bookings.length})</option>` +
+          state.events
+            .map((ev) => `<option value="${escapeHtml(ev.id)}" ${currentSelected === ev.id ? 'selected' : ''}>${escapeHtml(ev.title)}</option>`)
+            .join('');
+
+        // Render Organizer Events Table
+        const orgSearch = state.filters.orgEventSearch.trim().toLowerCase();
+        const filteredOrgEvents = state.events.filter((ev) => {
+          if (!orgSearch) return true;
+          return `${ev.title} ${ev.city} ${ev.category}`.toLowerCase().includes(orgSearch);
+        });
+
+        const evTableBody = document.getElementById('organizerEventsTableBody');
+        evTableBody.innerHTML = filteredOrgEvents
+          .map((ev) => {
+            const rev = ev.sold * ev.price;
+            const occ = Math.min(100, Math.round((ev.sold / Math.max(1, ev.capacity)) * 100));
+            return `
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4">
+                  <div class="font-bold text-slate-900">${escapeHtml(ev.title)}</div>
+                  <div class="text-[11px] text-slate-500">${escapeHtml(ev.category)} • ID: ${escapeHtml(ev.id)}</div>
+                </td>
+                <td class="py-3 px-4">
+                  <div class="font-semibold text-slate-800">${escapeHtml(ev.date)}</div>
+                  <div class="text-[11px] text-slate-500">${escapeHtml(ev.city)} — ${escapeHtml(ev.venue)}</div>
+                </td>
+                <td class="py-3 px-4 text-right font-bold text-slate-800">${ev.price === 0 ? 'Free' : formatINR(ev.price)}</td>
+                <td class="py-3 px-4 text-right">
+                  <div class="font-bold text-slate-800">${ev.sold} / ${ev.capacity}</div>
+                  <div class="text-[10px] text-indigo-600 font-semibold">${occ}% full</div>
+                </td>
+                <td class="py-3 px-4 text-right font-extrabold text-emerald-700">${formatINR(rev)}</td>
+                <td class="py-3 px-4 text-center">
+                  <div class="inline-flex items-center gap-1.5">
+                    <button type="button" data-edit-event="${escapeHtml(ev.id)}" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-indigo-50 text-indigo-700 font-bold text-[11px]">Edit</button>
+                    <button type="button" data-delete-event="${escapeHtml(ev.id)}" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 text-rose-600 font-bold text-[11px]">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        // Render Organizer Bookings Table
+        const filteredOrgBookings = state.bookings.filter((b) => {
+          if (state.filters.orgBookingEvent === 'ALL') return true;
+          return b.eventId === state.filters.orgBookingEvent;
+        });
+
+        const bkTableBody = document.getElementById('organizerBookingsTableBody');
+        bkTableBody.innerHTML = filteredOrgBookings
+          .map((b) => {
+            const statusPill =
+              b.status === 'CONFIRMED'
+                ? '<span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[11px]">CONFIRMED</span>'
+                : b.status === 'CHECKED_IN'
+                ? '<span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-bold text-[11px]">CHECKED-IN</span>'
+                : '<span class="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold text-[11px]">CANCELLED</span>';
+
+            return `
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4 font-mono-code font-bold text-slate-900">${escapeHtml(b.bookingId)}</td>
+                <td class="py-3 px-4">
+                  <div class="font-bold text-slate-900">${escapeHtml(b.attendeeName)}</div>
+                  <div class="text-[11px] text-slate-500">${escapeHtml(b.attendeeEmail)}</div>
+                </td>
+                <td class="py-3 px-4">
+                  <div class="font-semibold text-slate-800 truncate max-w-[200px]">${escapeHtml(b.eventTitle)}</div>
+                  <div class="text-[11px] text-indigo-600 font-medium">${escapeHtml(b.tier)}</div>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <div class="font-bold text-slate-900">${formatINR(b.amountPaid)}</div>
+                  <div class="text-[10px] text-slate-500">Qty: ${b.qty}</div>
+                </td>
+                <td class="py-3 px-4 text-[11px] text-slate-600">${escapeHtml(b.paymentMethod)}</td>
+                <td class="py-3 px-4">${statusPill}</td>
+                <td class="py-3 px-4 text-center">
+                  <div class="inline-flex items-center gap-1.5">
+                    <button type="button" data-toggle-checkin="${escapeHtml(b.bookingId)}" class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px]">
+                      ${b.status === 'CHECKED_IN' ? 'Undo Check-In' : 'Check In'}
+                    </button>
+                    <button type="button" data-open-pass="${escapeHtml(b.bookingId)}" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px]">
+                      QR
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join('');
+
+        // Update Charts if Dashboard is visible
+        if (state.activeView === 'dashboard') {
+          updateDashboardCharts();
+        }
+      }
+
+      function updateDashboardCharts() {
+        const revCanvas = document.getElementById('revenueChartCanvas');
+        const statusCanvas = document.getElementById('statusChartCanvas');
+        if (!revCanvas || !statusCanvas || typeof Chart === 'undefined') return;
+
+        const labels = state.events.map((e) => e.title.slice(0, 18) + (e.title.length > 18 ? '…' : ''));
+        const soldData = state.events.map((e) => e.sold);
+
+        if (revenueChartInstance) revenueChartInstance.destroy();
+        revenueChartInstance = new Chart(revCanvas, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Tickets Sold',
+                data: soldData,
+                backgroundColor: '#4f46e5',
+                borderRadius: 6
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+
+        const confirmedCount = state.bookings.filter((b) => b.status === 'CONFIRMED').length;
+        const checkedInCount = state.bookings.filter((b) => b.status === 'CHECKED_IN').length;
+        const cancelledCount = state.bookings.filter((b) => b.status === 'CANCELLED').length;
+
+        if (statusChartInstance) statusChartInstance.destroy();
+        statusChartInstance = new Chart(statusCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: ['Confirmed (Unused)', 'Checked-In at Gate', 'Cancelled'],
+            datasets: [
+              {
+                data: [confirmedCount, checkedInCount, cancelledCount],
+                backgroundColor: ['#10b981', '#4f46e5', '#f43f5e'],
+                borderWidth: 2
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+
+      // --- BOOKING MODAL & PRICING CALCULATOR ---
+      function openBookingModal(eventId) {
+        const ev = state.events.find((e) => e.id === eventId);
+        if (!ev) return;
+
+        state.activeBookingDraft = {
+          eventId: ev.id,
+          basePrice: ev.price,
+          tierName: 'Standard Admission Pass',
+          tierMultiplier: 1,
+          qty: 1,
+          promoCode: '',
+          discountAmount: 0
+        };
+
+        document.getElementById('bookingModalCategory').textContent = `${ev.icon || '🎟️'} ${ev.category}`;
+        document.getElementById('bookingModalTitle').textContent = ev.title;
+        document.getElementById('bookingModalMeta').textContent = `📅 ${ev.date} (${ev.time}) • 📍 ${ev.venue}, ${ev.city}`;
+        document.getElementById('bookingModalDesc').textContent = ev.description;
+
+        // Populate tier select
+        const tierSelect = document.getElementById('bookingTierSelect');
+        const base = ev.price;
+        const vipPrice = base === 0 ? 199 : Math.round(base * 1.8);
+        const studentPrice = base === 0 ? 0 : Math.round(base * 0.75);
+
+        tierSelect.innerHTML = `
+          <option value="STANDARD" data-price="${base}" data-name="Standard Pass">Standard Pass — ${formatINR(base)}</option>
+          <option value="VIP" data-price="${vipPrice}" data-name="VIP Front-Row & Lounge Pass">VIP Front-Row & Lounge Pass — ${formatINR(vipPrice)}</option>
+          <option value="STUDENT" data-price="${studentPrice}" data-name="Student ID Discount Pass">Student ID Discount Pass — ${formatINR(studentPrice)}</option>
+        `;
+
+        document.getElementById('bookingQtyInput').value = '1';
+        document.getElementById('promoCodeInput').value = '';
+        document.getElementById('promoFeedbackText').classList.add('hidden');
+
+        recalculateBookingDraft();
+        document.getElementById('bookingModal').classList.remove('hidden');
+      }
+
+      function recalculateBookingDraft() {
+        const draft = state.activeBookingDraft;
+        if (!draft) return;
+
+        const tierSelect = document.getElementById('bookingTierSelect');
+        const selectedOption = tierSelect.options[tierSelect.selectedIndex];
+        const unitPrice = Number(selectedOption.getAttribute('data-price')) || 0;
+        const tierName = selectedOption.getAttribute('data-name') || 'Standard Pass';
+        const qty = Math.max(1, Math.min(10, Number(document.getElementById('bookingQtyInput').value) || 1));
+
+        const subtotal = unitPrice * qty;
+        let discount = 0;
+        const code = (draft.promoCode || '').toUpperCase();
+        if (code === 'COLLEGE20') {
+          discount = Math.round(subtotal * 0.2);
+        } else if (code === 'FEST50') {
+          discount = Math.min(subtotal, 50);
+        }
+
+        const discountedSubtotal = Math.max(0, subtotal - discount);
+        const convenienceFee = discountedSubtotal > 0 ? Math.round(discountedSubtotal * 0.05) : 0;
+        const totalPayable = discountedSubtotal + convenienceFee;
+
+        draft.unitPrice = unitPrice;
+        draft.tierName = tierName;
+        draft.qty = qty;
+        draft.subtotal = subtotal;
+        draft.discountAmount = discount;
+        draft.convenienceFee = convenienceFee;
+        draft.totalPayable = totalPayable;
+
+        document.getElementById('summaryBaseLabel').textContent = `Ticket Subtotal (${qty} × ${tierName})`;
+        document.getElementById('summaryBaseAmount').textContent = formatINR(subtotal);
+
+        const discountRow = document.getElementById('summaryDiscountRow');
+        if (discount > 0) {
+          discountRow.classList.remove('hidden');
+          document.getElementById('summaryDiscountLabel').textContent = `Promo Discount (${code})`;
+          document.getElementById('summaryDiscountAmount').textContent = `−${formatINR(discount)}`;
+        } else {
+          discountRow.classList.add('hidden');
+        }
+
+        document.getElementById('summaryFeeAmount').textContent = formatINR(convenienceFee);
+        document.getElementById('summaryTotalPayable').textContent = formatINR(totalPayable);
+      }
+
+      // --- PAYMENT GATEWAY FLOW ---
+      function openPaymentGatewayModal() {
+        const draft = state.activeBookingDraft;
+        if (!draft) return;
+
+        draft.attendeeName = document.getElementById('attendeeNameInput').value.trim() || 'Guest Attendee';
+        draft.attendeeEmail = document.getElementById('attendeeEmailInput').value.trim() || 'attendee@example.com';
+        draft.attendeePhone = document.getElementById('attendeePhoneInput').value.trim() || '+91 90000 00000';
+        draft.college = document.getElementById('attendeeCollegeInput').value.trim() || 'General Admission';
+
+        document.getElementById('bookingModal').classList.add('hidden');
+        document.getElementById('pgOrderSubtitle').textContent = `${draft.qty} × ${draft.tierName}`;
+        document.getElementById('pgHeaderTotal').textContent = formatINR(draft.totalPayable);
+        document.getElementById('paymentProcessingBox').classList.add('hidden');
+
+        // Render simulated UPI QR code
+        drawQRCodeOnCanvas(
+          document.getElementById('upiQrCanvas'),
+          `upi://pay?pa=eventsphere@icici&am=${draft.totalPayable}`
+        );
+
+        document.getElementById('paymentGatewayModal').classList.remove('hidden');
+      }
+
+      function completePaymentAndIssueTicket() {
+        const draft = state.activeBookingDraft;
+        if (!draft) return;
+
+        const ev = state.events.find((e) => e.id === draft.eventId);
+        if (!ev) return;
+
+        const procBox = document.getElementById('paymentProcessingBox');
+        const payBtn = document.getElementById('confirmPayNowBtn');
+        procBox.classList.remove('hidden');
+        payBtn.disabled = true;
+
+        setTimeout(() => {
+          const bookingNum = 1001 + state.bookings.length;
+          const newBookingId = `TBS-2026-${bookingNum}`;
+          const newTxnId = `TXN-${Math.floor(100000 + Math.random() * 900000)}`;
+
+          let payMethodLabel = 'UPI (QR/VPA)';
+          if (state.selectedPaymentMethod === 'CARD') {
+            payMethodLabel = 'Card (••8891)';
+          } else if (state.selectedPaymentMethod === 'NETBANKING') {
+            payMethodLabel = `NetBanking (${document.getElementById('bankSelectInput').value.split(' ')[0]})`;
+          } else {
+            const vpa = document.getElementById('upiIdInput').value.trim() || 'upi@okicici';
+            payMethodLabel = `UPI (${vpa})`;
+          }
+
+          const newBooking = {
+            bookingId: newBookingId,
+            eventId: ev.id,
+            eventTitle: ev.title,
+            eventDate: ev.date,
+            eventTime: ev.time,
+            venue: `${ev.venue}, ${ev.city}`,
+            attendeeName: draft.attendeeName,
+            attendeeEmail: draft.attendeeEmail,
+            attendeePhone: draft.attendeePhone,
+            college: draft.college,
+            tier: draft.tierName,
+            qty: draft.qty,
+            amountPaid: draft.totalPayable,
+            paymentMethod: payMethodLabel,
+            txnId: newTxnId,
+            status: 'CONFIRMED',
+            bookedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+            checkedInAt: null
+          };
+
+          state.bookings.unshift(newBooking);
+          ev.sold = Math.min(ev.capacity, Number(ev.sold) + Number(draft.qty));
+          saveState();
+
+          procBox.classList.add('hidden');
+          payBtn.disabled = false;
+          document.getElementById('paymentGatewayModal').classList.add('hidden');
+
+          renderAll();
+          openQrPassModal(newBookingId);
+          showToast(`Booking Confirmed! Ticket ID: ${newBookingId}`, 'success');
+        }, 700);
+      }
+
+      // --- QR PASS VIEWER MODAL ---
+      function openQrPassModal(bookingId) {
+        const booking = state.bookings.find((b) => b.bookingId === bookingId);
+        if (!booking) return;
+
+        state.activePassModalBookingId = booking.bookingId;
+        document.getElementById('passModalEventTitle').textContent = booking.eventTitle;
+        document.getElementById('passModalEventMeta').textContent = `${booking.eventDate} (${booking.eventTime}) • ${booking.venue}`;
+        document.getElementById('passModalBookingId').textContent = booking.bookingId;
+        document.getElementById('passModalAttendee').textContent = booking.attendeeName;
+        document.getElementById('passModalTierQty').textContent = `${booking.tier} × ${booking.qty}`;
+        document.getElementById('passModalAmountPaid').textContent = formatINR(booking.amountPaid);
+        document.getElementById('passModalTxnId').textContent = booking.txnId;
+
+        const statusBadge = document.getElementById('passModalStatusBadge');
+        if (booking.status === 'CONFIRMED') {
+          statusBadge.className = 'mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800';
+          statusBadge.textContent = '✓ CONFIRMED — READY FOR GATE SCAN';
+        } else if (booking.status === 'CHECKED_IN') {
+          statusBadge.className = 'mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800';
+          statusBadge.textContent = `📷 CHECKED IN (${booking.checkedInAt || 'Verified'})`;
+        } else {
+          statusBadge.className = 'mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800';
+          statusBadge.textContent = '✕ CANCELLED PASS';
+        }
+
+        drawQRCodeOnCanvas(
+          document.getElementById('passModalQrCanvas'),
+          `EVENTSPHERE|${booking.bookingId}|${booking.eventId}`
+        );
+
+        document.getElementById('qrPassModal').classList.remove('hidden');
+      }
+
+      // --- ORGANIZER CREATE / EDIT EVENT MODAL ---
+      function openEventFormModal(eventId) {
+        const modalTitle = document.getElementById('eventFormModalTitle');
+        const hiddenId = document.getElementById('editEventIdInput');
+
+        if (eventId) {
+          const ev = state.events.find((e) => e.id === eventId);
+          if (!ev) return;
+          modalTitle.textContent = `Edit Event — ${ev.id}`;
+          hiddenId.value = ev.id;
+          document.getElementById('evTitleInput').value = ev.title;
+          document.getElementById('evCategoryInput').value = ev.category;
+          document.getElementById('evCityInput').value = ev.city;
+          document.getElementById('evDateInput').value = ev.date;
+          document.getElementById('evTimeInput').value = ev.time;
+          document.getElementById('evVenueInput').value = ev.venue;
+          document.getElementById('evPriceInput').value = ev.price;
+          document.getElementById('evCapacityInput').value = ev.capacity;
+          document.getElementById('evOrganizerInput').value = ev.organizer;
+          document.getElementById('evDescInput').value = ev.description;
+        } else {
+          modalTitle.textContent = 'Create & Publish New Event';
+          hiddenId.value = '';
+          document.getElementById('organizerEventForm').reset();
+          document.getElementById('evDateInput').value = '2026-12-18';
+          document.getElementById('evTimeInput').value = '10:00 AM IST';
+          document.getElementById('evPriceInput').value = '299';
+          document.getElementById('evCapacityInput').value = '300';
+        }
+
+        document.getElementById('eventFormModal').classList.remove('hidden');
+      }
+
+      // --- EXPORT CSV ---
+      function exportBookingsToCSV() {
+        const headers = ['BookingID', 'EventID', 'EventTitle', 'AttendeeName', 'Email', 'Phone', 'College', 'Tier', 'Qty', 'AmountPaid_INR', 'PaymentMethod', 'TxnID', 'Status', 'CheckedInAt'];
+        const rows = state.bookings.map((b) => [
+          b.bookingId,
+          b.eventId,
+          `"${String(b.eventTitle).replace(/"/g, '""')}"`,
+          `"${String(b.attendeeName).replace(/"/g, '""')}"`,
+          b.attendeeEmail,
+          b.attendeePhone,
+          `"${String(b.college || '').replace(/"/g, '""')}"`,
+          `"${String(b.tier).replace(/"/g, '""')}"`,
+          b.qty,
+          b.amountPaid,
+          `"${String(b.paymentMethod).replace(/"/g, '""')}"`,
+          b.txnId,
+          b.status,
+          b.checkedInAt || ''
+        ]);
+        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'EventSphere_TBS_Bookings.csv';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        showToast('Exported bookings to EventSphere_TBS_Bookings.csv', 'success');
+      }
+
+      // --- MASTER RENDER ---
+      function renderAll() {
+        const activeCount = state.bookings.filter((b) => b.status !== 'CANCELLED').length;
+        document.getElementById('navTicketCountBadge').textContent = String(activeCount);
+        document.getElementById('mobileTicketCountBadge').textContent = String(activeCount);
+        document.getElementById('heroStatEvents').textContent = String(state.events.length);
+        document.getElementById('heroStatBookings').textContent = String(activeCount);
+
+        renderExploreEvents();
+        renderMyTickets();
+        renderScannerView();
+        renderOrganizerDashboard();
+      }
+
+      // --- EVENT LISTENERS SETUP ---
+      function bindEvents() {
+        // Brand home click
+        document.getElementById('brandHomeBtn').addEventListener('click', () => switchView('explore'));
+
+        // Nav tab clicks
+        document.querySelectorAll('.nav-tab-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-nav');
+            if (target) switchView(target);
+          });
+        });
+
+        // Mobile drawer toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+          document.getElementById('mobileNavDrawer').classList.toggle('hidden');
+        });
+
+        // Hero quick buttons
+        document.getElementById('heroQuickScannerBtn').addEventListener('click', () => switchView('scanner'));
+        document.getElementById('heroOrganizerBtn').addEventListener('click', () => switchView('dashboard'));
+        document.getElementById('headerCreateEventBtn').addEventListener('click', () => {
+          switchView('dashboard');
+          openEventFormModal('');
+        });
+        document.getElementById('ticketsBrowseMoreBtn').addEventListener('click', () => switchView('explore'));
+
+        // Explore search & filters
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+          state.filters.search = e.target.value;
+          renderExploreEvents();
+        });
+        document.getElementById('clearSearchBtn').addEventListener('click', () => {
+          state.filters.search = '';
+          document.getElementById('searchInput').value = '';
+          renderExploreEvents();
+        });
+        document.getElementById('cityFilter').addEventListener('change', (e) => {
+          state.filters.city = e.target.value;
+          renderExploreEvents();
+        });
+        document.getElementById('priceFilter').addEventListener('change', (e) => {
+          state.filters.price = e.target.value;
+          renderExploreEvents();
+        });
+        document.getElementById('sortSelect').addEventListener('change', (e) => {
+          state.filters.sort = e.target.value;
+          renderExploreEvents();
+        });
+
+        // Category pills
+        document.getElementById('categoryPillsContainer').addEventListener('click', (e) => {
+          const pill = e.target.closest('.cat-pill');
+          if (!pill) return;
+          state.filters.category = pill.getAttribute('data-category') || 'ALL';
+          document.querySelectorAll('.cat-pill').forEach((p) => {
+            const isSelected = p.getAttribute('data-category') === state.filters.category;
+            p.className = `cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+              isSelected ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`;
+          });
+          renderExploreEvents();
+        });
+
+        function resetExploreFilters() {
+          state.filters.search = '';
+          state.filters.category = 'ALL';
+          state.filters.city = 'ALL';
+          state.filters.price = 'ALL';
+          state.filters.sort = 'DATE_ASC';
+          document.getElementById('searchInput').value = '';
+          document.getElementById('cityFilter').value = 'ALL';
+          document.getElementById('priceFilter').value = 'ALL';
+          document.getElementById('sortSelect').value = 'DATE_ASC';
+          document.querySelectorAll('.cat-pill').forEach((p) => {
+            const isAll = p.getAttribute('data-category') === 'ALL';
+            p.className = `cat-pill px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+              isAll ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`;
+          });
+          renderExploreEvents();
+        }
+
+        document.getElementById('resetFiltersBtn').addEventListener('click', resetExploreFilters);
+        document.getElementById('emptyStateResetBtn').addEventListener('click', resetExploreFilters);
+
+        // Delegated clicks on Events Grid (Book button)
+        document.getElementById('eventsGrid').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-book-event]');
+          if (!btn) return;
+          openBookingModal(btn.getAttribute('data-book-event'));
+        });
+
+        // Booking Modal Controls
+        document.getElementById('closeBookingModalBtn').addEventListener('click', () => {
+          document.getElementById('bookingModal').classList.add('hidden');
+        });
+        document.getElementById('cancelBookingModalBtn').addEventListener('click', () => {
+          document.getElementById('bookingModal').classList.add('hidden');
+        });
+        document.getElementById('bookingTierSelect').addEventListener('change', recalculateBookingDraft);
+        document.getElementById('qtyMinusBtn').addEventListener('click', () => {
+          const inp = document.getElementById('bookingQtyInput');
+          inp.value = String(Math.max(1, (Number(inp.value) || 1) - 1));
+          recalculateBookingDraft();
+        });
+        document.getElementById('qtyPlusBtn').addEventListener('click', () => {
+          const inp = document.getElementById('bookingQtyInput');
+          inp.value = String(Math.min(10, (Number(inp.value) || 1) + 1));
+          recalculateBookingDraft();
+        });
+
+        // Promo Code Quick Buttons & Apply
+        document.querySelectorAll('.promo-quick-btn').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const code = btn.getAttribute('data-promo');
+            document.getElementById('promoCodeInput').value = code;
+            document.getElementById('applyPromoBtn').click();
+          });
+        });
+
+        document.getElementById('applyPromoBtn').addEventListener('click', () => {
+          if (!state.activeBookingDraft) return;
+          const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+          const msgEl = document.getElementById('promoFeedbackText');
+          msgEl.classList.remove('hidden');
+          if (code === 'COLLEGE20' || code === 'FEST50') {
+            state.activeBookingDraft.promoCode = code;
+            msgEl.className = 'text-xs font-semibold text-emerald-600';
+            msgEl.textContent = `✓ Promo code ${code} applied!`;
+          } else {
+            state.activeBookingDraft.promoCode = '';
+            msgEl.className = 'text-xs font-semibold text-rose-600';
+            msgEl.textContent = 'Invalid promo code. Try COLLEGE20 or FEST50.';
+          }
+          recalculateBookingDraft();
+        });
+
+        document.getElementById('ticketBookingForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          openPaymentGatewayModal();
+        });
+
+        // Payment Gateway Controls
+        document.querySelectorAll('.pay-method-tab').forEach((tab) => {
+          tab.addEventListener('click', () => {
+            const method = tab.getAttribute('data-paymethod');
+            state.selectedPaymentMethod = method;
+            document.querySelectorAll('.pay-method-tab').forEach((t) => {
+              const active = t.getAttribute('data-paymethod') === method;
+              t.className = `pay-method-tab py-2 rounded-lg text-xs font-bold transition ${
+                active ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`;
+            });
+            ['UPI', 'CARD', 'NETBANKING'].forEach((m) => {
+              document.getElementById(`payPanel-${m}`).classList.toggle('hidden', m !== method);
+            });
+          });
+        });
+
+        document.getElementById('verifyVpaBtn').addEventListener('click', () => {
+          const val = document.getElementById('upiIdInput').value.trim();
+          const badge = document.getElementById('vpaVerifiedBadge');
+          badge.textContent = val.includes('@')
+            ? `✓ Verified VPA: ${val.toUpperCase()} (Active Banking Handle)`
+            : '⚠ Please include an @ handle (e.g. student@okaxis)';
+        });
+
+        document.getElementById('closePaymentGatewayBtn').addEventListener('click', () => {
+          document.getElementById('paymentGatewayModal').classList.add('hidden');
+          document.getElementById('bookingModal').classList.remove('hidden');
+        });
+
+        document.getElementById('confirmPayNowBtn').addEventListener('click', completePaymentAndIssueTicket);
+
+        // My Tickets Filter & Delegated Actions
+        document.getElementById('ticketStatusFilter').addEventListener('change', (e) => {
+          state.filters.ticketStatus = e.target.value;
+          renderMyTickets();
+        });
+
+        document.getElementById('myTicketsContainer').addEventListener('click', (e) => {
+          const openBtn = e.target.closest('[data-open-pass]');
+          if (openBtn) {
+            openQrPassModal(openBtn.getAttribute('data-open-pass'));
+            return;
+          }
+          const scanBtn = e.target.closest('[data-scan-now]');
+          if (scanBtn) {
+            const bId = scanBtn.getAttribute('data-scan-now');
+            switchView('scanner');
+            validateTicketById(bId);
+            return;
+          }
+          const cancelBtn = e.target.closest('[data-cancel-booking]');
+          if (cancelBtn) {
+            const bId = cancelBtn.getAttribute('data-cancel-booking');
+            const bk = state.bookings.find((b) => b.bookingId === bId);
+            if (bk && bk.status === 'CONFIRMED') {
+              bk.status = 'CANCELLED';
+              const ev = state.events.find((x) => x.id === bk.eventId);
+              if (ev) ev.sold = Math.max(0, ev.sold - bk.qty);
+              saveState();
+              renderAll();
+              showToast(`Booking ${bId} cancelled and seat released.`, 'warning');
+            }
+          }
+        });
+
+        // QR Pass Modal Actions
+        document.getElementById('closeQrPassModalBtn').addEventListener('click', () => {
+          document.getElementById('qrPassModal').classList.add('hidden');
+        });
+        document.getElementById('passSendToScannerBtn').addEventListener('click', () => {
+          const bId = state.activePassModalBookingId;
+          document.getElementById('qrPassModal').classList.add('hidden');
+          switchView('scanner');
+          if (bId) validateTicketById(bId);
+        });
+        document.getElementById('passPrintBtn').addEventListener('click', () => {
+          showToast('Prepared digital ticket pass for printing / PDF save.', 'success');
+          window.print();
+        });
+
+        // Scanner Controls
+        document.getElementById('toggleCameraSimBtn').addEventListener('click', (e) => {
+          state.cameraLaserActive = !state.cameraLaserActive;
+          document.getElementById('scannerLaser').classList.toggle('hidden', !state.cameraLaserActive);
+          document.getElementById('cameraStatusDot').classList.toggle('animate-ping', state.cameraLaserActive);
+          e.target.textContent = state.cameraLaserActive ? 'Pause Laser' : 'Resume Laser';
+        });
+
+        document.getElementById('manualScanForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          validateTicketById(document.getElementById('manualTicketIdInput').value);
+        });
+
+        document.getElementById('quickScanButtonsList').addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-quick-scan]');
+          if (!btn) return;
+          validateTicketById(btn.getAttribute('data-quick-scan'));
+        });
+
+        document.getElementById('testInvalidQrBtn').addEventListener('click', () => {
+          validateTicketById('TBS-FAKE-9999');
+        });
+
+        document.getElementById('validationResultCard').addEventListener('click', (e) => {
+          const resetBtn = e.target.closest('[data-reset-checkin]');
+          if (!resetBtn) return;
+          const bId = resetBtn.getAttribute('data-reset-checkin');
+          const bk = state.bookings.find((b) => b.bookingId === bId);
+          if (bk) {
+            bk.status = 'CONFIRMED';
+            bk.checkedInAt = null;
+            saveState();
+            renderAll();
+            showToast(`Reset ${bId} to CONFIRMED (Unused). Scan again to test!`, 'success');
+          }
+        });
+
+        document.getElementById('clearScanLogBtn').addEventListener('click', () => {
+          state.scanLogs = [];
+          renderScannerView();
+        });
+
+        // Organizer Dashboard Controls
+        document.getElementById('openCreateEventModalBtn').addEventListener('click', () => openEventFormModal(''));
+        document.getElementById('closeEventFormModalBtn').addEventListener('click', () => {
+          document.getElementById('eventFormModal').classList.add('hidden');
+        });
+        document.getElementById('cancelEventFormBtn').addEventListener('click', () => {
+          document.getElementById('eventFormModal').classList.add('hidden');
+        });
+        document.getElementById('exportBookingsCsvBtn').addEventListener('click', exportBookingsToCSV);
+
+        document.getElementById('orgEventSearchInput').addEventListener('input', (e) => {
+          state.filters.orgEventSearch = e.target.value;
+          renderOrganizerDashboard();
+        });
+        document.getElementById('orgBookingEventFilter').addEventListener('change', (e) => {
+          state.filters.orgBookingEvent = e.target.value;
+          renderOrganizerDashboard();
+        });
+
+        document.getElementById('organizerEventsTableBody').addEventListener('click', (e) => {
+          const editBtn = e.target.closest('[data-edit-event]');
+          if (editBtn) {
+            openEventFormModal(editBtn.getAttribute('data-edit-event'));
+            return;
+          }
+          const delBtn = e.target.closest('[data-delete-event]');
+          if (delBtn) {
+            const evId = delBtn.getAttribute('data-delete-event');
+            state.events = state.events.filter((x) => x.id !== evId);
+            saveState();
+            renderAll();
+            showToast(`Deleted event ${evId}.`, 'warning');
+          }
+        });
+
+        document.getElementById('organizerBookingsTableBody').addEventListener('click', (e) => {
+          const toggleBtn = e.target.closest('[data-toggle-checkin]');
+          if (toggleBtn) {
+            const bId = toggleBtn.getAttribute('data-toggle-checkin');
+            const bk = state.bookings.find((b) => b.bookingId === bId);
+            if (bk) {
+              if (bk.status === 'CHECKED_IN') {
+                bk.status = 'CONFIRMED';
+                bk.checkedInAt = null;
+                showToast(`Marked ${bId} as Confirmed (Unused).`, 'success');
+              } else {
+                bk.status = 'CHECKED_IN';
+                bk.checkedInAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+                showToast(`Checked in ${bId} (${bk.attendeeName}).`, 'success');
+              }
+              saveState();
+              renderAll();
+            }
+            return;
+          }
+          const passBtn = e.target.closest('[data-open-pass]');
+          if (passBtn) {
+            openQrPassModal(passBtn.getAttribute('data-open-pass'));
+          }
+        });
+
+        // Save Create/Edit Event Form
+        document.getElementById('organizerEventForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const editId = document.getElementById('editEventIdInput').value.trim();
+          const cat = document.getElementById('evCategoryInput').value;
+          const iconMap = {
+            'Tech & Hackathon': '💻',
+            'Music & Concert': '🎸',
+            'College Fest': '🎓',
+            Workshop: '🛠️',
+            'Sports & E-Sports': '🏆'
+          };
+          const gradMap = {
+            'Tech & Hackathon': 'from-indigo-600 via-blue-600 to-cyan-500',
+            'Music & Concert': 'from-fuchsia-600 via-purple-600 to-indigo-600',
+            'College Fest': 'from-amber-500 via-orange-600 to-rose-600',
+            Workshop: 'from-emerald-600 via-teal-600 to-cyan-600',
+            'Sports & E-Sports': 'from-rose-600 via-red-600 to-orange-500'
+          };
+
+          const payload = {
+            title: document.getElementById('evTitleInput').value.trim(),
+            category: cat,
+            city: document.getElementById('evCityInput').value,
+            date: document.getElementById('evDateInput').value,
+            time: document.getElementById('evTimeInput').value.trim(),
+            venue: document.getElementById('evVenueInput').value.trim(),
+            price: Math.max(0, Number(document.getElementById('evPriceInput').value) || 0),
+            capacity: Math.max(10, Number(document.getElementById('evCapacityInput').value) || 100),
+            organizer: document.getElementById('evOrganizerInput').value.trim(),
+            description: document.getElementById('evDescInput').value.trim(),
+            icon: iconMap[cat] || '🎟️',
+            gradient: gradMap[cat] || 'from-indigo-600 to-violet-600',
+            badge: 'Newly Added'
+          };
+
+          if (editId) {
+            const existing = state.events.find((x) => x.id === editId);
+            if (existing) {
+              Object.assign(existing, payload);
+              showToast(`Updated event "${payload.title}"`, 'success');
+            }
+          } else {
+            const newId = `EVT-${101 + state.events.length}`;
+            state.events.unshift({
+              id: newId,
+              sold: 0,
+              ...payload
+            });
+            showToast(`Published new event "${payload.title}" (${newId})`, 'success');
+          }
+
+          saveState();
+          document.getElementById('eventFormModal').classList.add('hidden');
+          renderAll();
+        });
+      }
+
+      // --- INITIALIZE APP ---
+      loadState();
+      bindEvents();
+      drawQRCodeOnCanvas(document.getElementById('scannerLiveCanvas'), 'EVENTSPHERE|READY');
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
